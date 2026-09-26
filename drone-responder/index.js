@@ -21,6 +21,8 @@ console.log('Starting SmartSpectra...');
 let latestMetrics = null;
 
 const server = createServer((request, response) => {
+    response.setHeader('Access-Control-Allow-Origin', '*');
+
     if (request.method !== 'GET' || request.url !== '/metrics') {
         response.writeHead(404, { 'Content-Type': 'application/json' });
         response.end(JSON.stringify({ error: 'Not found' }));
