@@ -1,4 +1,0 @@
-set "SMARTSPECTRA_SDK_PATH=C:\SmartSpectra" && cmake -S . -B build -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release && cmake --build build
-
-set "PATH=%SMARTSPECTRA_SDK_PATH%\bin;%PATH%"
-.\build\hello_vitals.exe YOUR_API_KEY

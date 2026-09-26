@@ -1,3 +1,0 @@
-C:/Users/eloic/OneDrive/Desktop/HackTheHillIII/HelloVitals/build/CMakeFiles/hello_vitals.dir
-C:/Users/eloic/OneDrive/Desktop/HackTheHillIII/HelloVitals/build/CMakeFiles/edit_cache.dir
-C:/Users/eloic/OneDrive/Desktop/HackTheHillIII/HelloVitals/build/CMakeFiles/rebuild_cache.dir

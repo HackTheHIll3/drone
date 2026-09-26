@@ -1,0 +1,7 @@
+$env:SMARTSPECTRA_API_KEY="YOUR_API_KEY_HERE"
+
+Check if API Key:
+
+if ($env:SMARTSPECTRA_API_KEY) {
+    Write-Host "API key is set"
+}
