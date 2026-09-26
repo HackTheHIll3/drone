@@ -75,6 +75,7 @@ sdk.on('metrics', (buffer, timestamp) => {
         metrics: decodeMetrics(buffer),
         timestamp
     };
+    console.log("Sucessufly scnanned and got metrics");
 });
 
 sdk.on('error', (code, message, retryable) => {
