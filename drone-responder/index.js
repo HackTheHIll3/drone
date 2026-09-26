@@ -1,3 +1,4 @@
+import { createServer } from 'node:http';
 import {
     SmartSpectraSDK,
     breathingMetrics,
@@ -16,6 +17,33 @@ if (!apiKey) {
 }
 
 console.log('Starting SmartSpectra...');
+
+let latestMetrics = null;
+
+const server = createServer((request, response) => {
+    if (request.method !== 'GET' || request.url !== '/metrics') {
+        response.writeHead(404, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify({ error: 'Not found' }));
+        return;
+    }
+
+    if (!latestMetrics) {
+        response.writeHead(503, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify({ error: 'Metrics are not available yet' }));
+        return;
+    }
+
+    response.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store'
+    });
+    response.end(JSON.stringify(latestMetrics));
+});
+
+const port = Number(process.env.PORT || 3000);
+server.listen(port, '127.0.0.1', () => {
+    console.log(`Metrics endpoint available at http://127.0.0.1:${port}/metrics`);
+});
 
 const sdk = new SmartSpectraSDK({
     apiKey,
@@ -41,21 +69,10 @@ sdk.on('validationStatus', (code, timestamp, hint) => {
 });
 
 sdk.on('metrics', (buffer, timestamp) => {
-    const metrics = decodeMetrics(buffer);
-
-    console.log(
-        '\n===== VITALS ====='
-    );
-
-    console.log(
-        JSON.stringify(metrics, null, 2)
-    );
-
-    console.log(
-        'Timestamp:',
-        timestamp,
-        'µs'
-    );
+    latestMetrics = {
+        metrics: decodeMetrics(buffer),
+        timestamp
+    };
 });
 
 sdk.on('error', (code, message, retryable) => {
@@ -88,6 +105,9 @@ process.on('SIGINT', async () => {
 
     await sdk.stopAsync();
     await sdk.destroy();
+    await new Promise((resolve, reject) => {
+        server.close((error) => error ? reject(error) : resolve());
+    });
 
     process.exit(0);
 });
