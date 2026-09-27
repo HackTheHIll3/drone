@@ -3,6 +3,7 @@ import {
     SmartSpectraSDK,
     breathingMetrics,
     cardioMetrics,
+    faceMetrics,
     decodeMetrics
 } from '@smartspectra/node-sdk';
 
@@ -18,7 +19,7 @@ if (!apiKey) {
 
 console.log('Starting SmartSpectra...');
 
-let latestMetrics = null;
+let latestMetrics = { metrics: {}, timestamp: 0 };   
 
 const server = createServer((request, response) => {
     response.setHeader('Access-Control-Allow-Origin', '*');
@@ -51,7 +52,8 @@ const sdk = new SmartSpectraSDK({
     apiKey,
     requestedMetrics: [
         ...breathingMetrics,
-        ...cardioMetrics
+        ...cardioMetrics,
+        ...faceMetrics
     ]
 });
 
@@ -71,12 +73,26 @@ sdk.on('validationStatus', (code, timestamp, hint) => {
 });
 
 sdk.on('metrics', (buffer, timestamp) => {
-    latestMetrics = {
-        metrics: decodeMetrics(buffer),
-        timestamp
-    };
+    const decoded = decodeMetrics(buffer);
+    
+    console.log(decoded);
+
+    // Merge each top-level category (breathing, cardio, face, ...)
+    for (const [category, data] of Object.entries(decoded)) {
+        if (!latestMetrics.metrics[category]) {
+            latestMetrics.metrics[category] = {};
+        }
+        // Merge each metric within the category
+        for (const [metric, readings] of Object.entries(data)) {
+            // Keep only the latest reading (or accumulate if you want history)
+            latestMetrics.metrics[category][metric] = readings;
+        }
+    }
+
+    latestMetrics.timestamp = timestamp;
+
     console.log("Sucessufly scnanned and got metrics");
-});
+});   
 
 sdk.on('error', (code, message, retryable) => {
     console.error(
