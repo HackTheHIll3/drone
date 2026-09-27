@@ -1,4 +1,4 @@
-import { createServer } from 'node:http';
+import express from 'express';
 import {
     SmartSpectraSDK,
     breathingMetrics,
@@ -19,32 +19,32 @@ if (!apiKey) {
 
 console.log('Starting SmartSpectra...');
 
-let latestMetrics = { metrics: {}, timestamp: 0 };   
+let latestMetrics = { metrics: {}, timestamp: 0 };
 
-const server = createServer((request, response) => {
+const app = express();
+
+// Handle CORS for all routes
+app.use((request, response, next) => {
     response.setHeader('Access-Control-Allow-Origin', '*');
+    next();
+});
 
-    if (request.method !== 'GET' || request.url !== '/metrics') {
-        response.writeHead(404, { 'Content-Type': 'application/json' });
-        response.end(JSON.stringify({ error: 'Not found' }));
-        return;
-    }
-
+app.get('/metrics', (request, response) => {
     if (!latestMetrics) {
-        response.writeHead(503, { 'Content-Type': 'application/json' });
-        response.end(JSON.stringify({ error: 'Metrics are not available yet' }));
-        return;
+        return response.status(503).json({ error: 'Metrics are not available yet' });
     }
 
-    response.writeHead(200, {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-store'
-    });
-    response.end(JSON.stringify(latestMetrics));
+    response.set('Cache-Control', 'no-store');
+    response.status(200).json(latestMetrics);
+});
+
+// Catch-all for anything else -> 404 JSON (matches original behavior)
+app.use((request, response) => {
+    response.status(404).json({ error: 'Not found' });
 });
 
 const port = Number(process.env.PORT || 3000);
-server.listen(port, '127.0.0.1', () => {
+const server = app.listen(port, '127.0.0.1', () => {
     console.log(`Metrics endpoint available at http://127.0.0.1:${port}/metrics`);
 });
 
@@ -74,7 +74,7 @@ sdk.on('validationStatus', (code, timestamp, hint) => {
 
 sdk.on('metrics', (buffer, timestamp) => {
     const decoded = decodeMetrics(buffer);
-    
+
     console.log(decoded);
 
     // Merge each top-level category (breathing, cardio, face, ...)
@@ -92,7 +92,7 @@ sdk.on('metrics', (buffer, timestamp) => {
     latestMetrics.timestamp = timestamp;
 
     console.log("Sucessufly scnanned and got metrics");
-});   
+});
 
 sdk.on('error', (code, message, retryable) => {
     console.error(

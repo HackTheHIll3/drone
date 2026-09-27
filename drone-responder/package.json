@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@smartspectra/node-sdk": "^3.3.0"
+    "@smartspectra/node-sdk": "^3.3.0",
+    "express": "^5.2.1"
   }
 }
